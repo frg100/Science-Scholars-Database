@@ -42,8 +42,15 @@ Make Your Selection : ''')
 			a = 1
 
 		elif selection == '1':
-			add()
-			a = 1
+			ynexcel = raw_input("\nIf you would you like to add using an excel sheet in the proper format, press 0\nIf you would like to add the data manually, press 1")
+			if ynexcel == '0':
+				add_excel()
+				a = 1
+			elif ynexcel == '1':
+				add()
+				a = 1
+			else:
+				pass
 
 		elif selection == '2':
 			print "\n"
@@ -71,6 +78,11 @@ def search():
 |If you would like to search by TOPIC, type 3       |
 |                                                   |
 |If you would like to search by STUDENT, type 4     |
+|                                                   |
+|TIP: Less is more!                                 |
+|   (If the affiliation name is "Columbia",         |
+|   a search of "Columbia" will give you a result   |
+|   while a search of "Columbia University" won't)  |
 ---------------------------------------------------
 ''')
 		selection = raw_input('\n Please Make Your Selection : ')
@@ -108,7 +120,10 @@ def search():
 	'''
 	for x in db.all():
 		try:
-			if user_input.lower() in x[query].lower():
+			low = x[query].lower()
+			spl = low.split()
+			mutatedstring = ''.join(spl)
+			if user_input.lower() in mutatedstring:
 				print ( '''
 ---------------------------------------------
 |Mentor name : %s                           
@@ -120,12 +135,30 @@ def search():
 |Phone Number : %s
 |
 |Student : %s
+|
+|Email: %s
+|
+|Year: %s
 ---------------------------------------------
-''' %(x['Name'], x['topic'], x['Affiliation'], x['Phone'], x['student']) )
+''' %(x['Name'], x['topic'], x['Affiliation'], x['Phone'], x['student'], x['Email'], x['Year'] ))
 		except TypeError:
-			print 'TypeError'
+			pass
 		except AttributeError:
-			print 'AttributeError'
+			pass
+		except KeyError:
+			print ( '''
+---------------------------------------------
+|Mentor name : %s                           
+|
+|Topic : %s
+|
+|Affiliation : %s
+|
+|Phone Number : %s
+|
+|Student : %s
+---------------------------------------------
+''' %(x['Name'], x['topic'], x['Affiliation'], x['Phone'], x['student']))
 	#print db.search(mentor.query.search('%s' %user_input))
 	#info = db.get(mentor.query == '%s' %user_input)
 	'''
@@ -137,6 +170,39 @@ def search():
 		print ("There are no results to match that query...")
 	'''
 	Selection()
+
+def consolidate_name( prefix, first_name, middle_initial, last_name ):
+	if prefix is None:
+		prefix = ''
+	if middle_initial is None:
+		middle_initial  = ''
+	if first_name is None:
+		first_name = ''
+	if last_name is None:
+		last_name  = ''
+	full_name = prefix + ' ' + first_name + ' ' + middle_initial + ' ' + last_name
+	return full_name
+
+def add_excel():
+	print "Make sure the excel sheet is in the proper format. Also make sure it is in the application folder"
+	import openpyxl
+	excel_sheet = raw_input('''What is the name of the excel sheet?\nFor example, you could name your sheet "mentors.xlsx"\nMake sure to type in the exact name: ''')
+	xl = openpyxl.load_workbook(excel_sheet)
+	sheet = xl.get_sheet_by_name('Sheet1')
+	number_of_rows = int(raw_input("What is the ROW number of the last mentor in the sheet?: "))
+	for x in range(3,number_of_rows+1):
+		year = sheet.cell(row = 1, column = 2).value
+    	prefix = sheet.cell(row = x, column = 1).value
+    	first_name = sheet.cell(row = x, column = 2).value
+    	middle_initial = sheet.cell(row = x, column = 3).value
+    	last_name = sheet.cell(row = x, column = 4).value
+    	affiliation = sheet.cell(row = x, column = 6).value
+    	phone  = sheet.cell(row = x, column = 7).value
+    	topic = sheet.cell(row = x, column = 8).value
+    	student = sheet.cell(row = x, column = 9).value
+    	full_name = consolidate_name(prefix,first_name,middle_initial,last_name)
+    	db.insert({'Name': full_name,'Affiliation': affiliation, 'Phone': phone, 'topic': topic, 'student': student, 'Year': year})
+
 
 def add():
 	a = 0
@@ -152,7 +218,8 @@ def add():
 		phone  = raw_input("\nPhone Number: ")
 		topic = raw_input("\nTopic: ")
 		student = raw_input("\nStudent: ")
-		print ("\n\nHere is what you inputted: \n\n    Scientist: %s %s %s %s \n\n    Affiliation: %s \n\n    Phone Number: %s \n\n    Topic: %s \n\n    Student: %s \n\n") %(prefix, first_name, middle_initial, last_name, affiliation, phone, topic, student)
+		year = raw_input("\nYear: ")
+		print ("\n\nHere is what you inputted: \n\n    Scientist: %s %s %s %s \n\n    Affiliation: %s \n\n    Phone Number: %s \n\n    Topic: %s \n\n    Student: %s \n\n    Year: %s \n\n") %(prefix, first_name, middle_initial, last_name, affiliation, phone, topic, student, year)
 		selection = raw_input('''
 Is this information ok? 
 
@@ -173,7 +240,7 @@ Please Make Your Selection : \n
 				a = 1
 				b = 1
 				full_name = consolidate_name(prefix,first_name,middle_initial,last_name)
-				db.insert({'Name': full_name,'Affiliation': affiliation, 'Phone': phone, 'topic': topic, 'student': student})
+				db.insert({'Name': full_name,'Affiliation': affiliation, 'Phone': phone, 'topic': topic, 'student': student, 'Year': year})
 
 			elif selection == '1':
 				a = 0
